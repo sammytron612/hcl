@@ -1,0 +1,415 @@
+'-------------------------------------------------------------------
+' Copyright (C) 2019-2021  HCL                                
+'
+' Purpose :   Setup script: Join AD
+' Author  :   Dirk Bracke
+' Date    :   Feb 2021
+' Version :   1.8
+'-------------------------------------------------------------------
+' History:
+'  1.0 - Dirk Bracke 	- original version
+'  1.2 - Dirk Bracke 	- moved JoinAD.exe earlier so add to Administrators works consistently
+'  1.3 - Denis Gendera	- updated script AddUser2Cert.vbs to include extra logging for troubleshooting
+'  1.4 - Dirk Bracke    - updated to support generic installs
+'  1.5 - Dirk Bracke    - try joining in OU=USBBlocked if joining to OU=Windows10 fails
+'                       - removed AddUser2Cert - no longer needed
+'  1.6 - Denis Gendera  - join to OU=USBBlocked on first attempt
+'  1.7 - Dirk Bracke    - changed to gpcjoinad2.im
+'                       - added support for joining in the INT Domain through a C:\INT.flg 
+' TODO:
+
+Option Explicit
+
+' On Error Resume Next
+Dim FSO, oShell, oArgs, oCA, oWMI, sCmd, iRetCode
+Set FSO = CreateObject("scripting.filesystemobject")
+Set oShell = CreateObject("wscript.shell")
+' Set oArgs = WScript.arguments
+' Set oWMI = GetObject("WinMgmts:root/cimv2")
+
+Const cQACheckName = "JoinAD"
+
+Dim sResultStatus
+
+Dim is64bit
+is64bit = FSO.FileExists ("C:\Windows\System32\manage-bde.exe")
+
+Dim sRegExePath
+If NOT is64bit Then
+	sRegExePath = "C:\Windows\sysnative\reg.exe"
+Else
+	sRegExePath = "C:\Windows\system32\reg.exe"
+End If
+
+
+Log "Joining PC in AD"
+
+
+Dim oXML, sEmailAddress, iPos, sADUserID, oRebootFlgFile, oFlagFile, sADUserID2Remove, bPreImageMode
+Dim iKey, iCnt
+
+' Get EmailAddress
+
+Set oXML = CreateObject("MSXML2.DOMDocument.3.0")
+oXML.async = False
+If oXML.load ("C:\HP\Logs\ConfigValues.XML") Then
+	
+	sEmailAddress = oXML.SelectSingleNode("//ConfigValues/EmailAddress/@value").Text
+
+Else
+	Dim oErr, sErrMsg
+	Set oErr = oXML.parseError
+	sErrMsg = "XML Parsing Error. File: " & oErr.url & "  Reason : " & oErr.reason & " Line: " & oErr.line & ", Character: " & oErr.linepos & ", Text: " & oErr.srcText
+
+	Log "AD   -- " & CStr(sErrMsg)
+	WScript.quit
+End If
+
+Log "AD   -- User Email address = " + sEmailAddress
+
+' derive the IntranetID from EmailAddress
+iPos = Instr (sEmailAddress, "@")
+If iPos > 0 Then
+	sADUserID = Left(sEmailAddress, iPos-1)
+Else
+	Log "AD   -- WARNING: cannot find '@' in Email Address: " + sEmailAddress + " assuming IntranetID provided"
+	sADUserID = sEmailAddress
+End If
+
+' call script to add user to Cert LDAP Group, except when setting up as generic.im
+
+' If sADUserID <> "generic.im" Then
+' 	Log "Running AddUser2Cert.vbs"
+'	oShell.Run "WScript.exe " + ScriptDir + "\AddUser2Cert.vbs /Q", 7, False
+' Else
+'	Log "Copying AddUser2Cert.vbs to C:\HP\ScriptsPerUser"
+'	FSO.CopyFile ScriptDir + "\AddUser2Cert.vbs", "C:\HP\ScriptsPerUser\AddUser2Cert.vbs"
+' End If
+
+Dim sMsg, iRet
+' first check if PC is successfully joined in AD
+If Not CheckJoinAD() Then
+	
+	iRet = JoinAD_PG()
+	If iRet = 0 Then
+		Log "AD   -- PC added to NA Domain successfully"
+		
+		sResultStatus = "OK: Computer joined to P&G Network"
+		
+		' wait a bit before adding users to Admin group
+		WScript.sleep 5000
+		
+'		If NOT FSO.FileExists ("C:\PGDEV.flg") Then
+'    	  	  Log "run tool to cache user profile/credentials"
+'    	  	  oShell.Run """" & BaseScriptDir & "\Tools\JoinAD.exe""", 1, True
+
+    	  	  ' oShell.Run "mshta.exe " & ScriptDir & "\CacheADCredentials.hta", 1, True
+
+'		End If
+	
+'    	Log "Adding AD user as local Admin"
+'		AddUserAsLocalAdmin
+    	
+    	Log "AD   -- Adding Support Groups as local Admin"
+		AddSupportGroupsAsAdmins
+		
+' disabling moved to later
+
+'		If NOT FSO.FileExists ("C:\PGDEV.flg") Then
+'		  DisableLocalAccount
+'		End If
+		
+		' moved to parent	
+		' SetupForContinueAfterReboot    	
+    	
+   		'  handled in calling HTA through returncode -99
+   		' TriggerReboot
+    		   		
+   		iRetCode = -99
+    	
+	Else
+		Log "AD   -- ERROR:  Failed to add PC to NA Domain !!! Return value: " & ShowError (iRet)
+				
+		sResultStatus = "FAILED:  cannot add this PC to the NA Domain !!!" 
+		iRetCode = -1
+	End If
+
+Else
+
+	sResultStatus = "OK: Computer joined to P&G Network" 
+	iRetCode = 0
+
+End If
+	
+
+Log "  " & sResultStatus
+
+WriteResultsXML cQACheckName, sResultStatus
+
+WScript.Quit (iRetCode)
+
+' --------------------------------------- Functions ------------------------------------------------
+
+Function CheckJoinAD ()
+
+	Dim oWMI, colItems, objItem
+	
+    Set oWMI = GetObject("winmgmts:\\.\root\cimv2")
+    Set colItems = oWMI.ExecQuery("Select PartofDomain,DomainRole,Domain,Workgroup from Win32_ComputerSystem", , 48)
+    For Each objItem In colItems
+        CheckJoinAD = objItem.PartOfDomain
+    Next
+
+End Function
+
+Sub AddUserAsLocalAdmin
+
+	If FSO.FileExists ("C:\PGDEV.flg") Then
+		sCmd = "cmd.exe /c NET Localgroup Administrators " + sADUserID + " /ADD >> C:\HP\Logs\Win10PostSetup.Log"
+    	Log "AD   -- " & CStr(sCmd)
+    	oShell.Run sCmd, 7, True
+    	Exit Sub
+	End If
+	
+	Dim iRetry, bAddedOK	
+    Dim fLog, sBuffer, i
+	iRetry = 0
+    
+    Do
+    		iRetry = iRetry + 1
+    		
+    		If iRetry > 2 Then ' wait 30 secs before retrying
+    			Log "AD   -- Waiting 30 secs before trying again..."
+    			For i=1 to 60
+    				WScript.Sleep 500
+    			Next 
+    		End If
+    
+    		sCmd = "cmd.exe /c NET Localgroup Administrators " + sEmailAddress + " /ADD >> C:\HP\Logs\Win10PostSetup.Log"
+    		Log "AD   -- " & CStr(sCmd)
+    		oShell.Run sCmd, 7, True
+    
+    		' check if it worked OK
+    		sCmd = "cmd.exe /c NET Localgroup Administrators > C:\HP\Logs\Add2AdminGroup.txt"
+    		Log "AD   -- " & CStr(sCmd)
+    		oShell.Run sCmd, 7, True
+    
+    		' copy output to main Debug log
+    		sCmd = "cmd.exe /c Type C:\HP\Logs\Add2AdminGroup.txt >> C:\HP\Logs\Win10PostSetup.Log"
+    		oShell.Run sCmd, 7, True
+    	
+    		Set fLog = FSO.OpenTextFile ("C:\HP\Logs\Add2AdminGroup.txt")
+    		sBuffer = fLog.ReadAll
+    		fLog.close
+    		
+    		' find back the ADUserID in the log output to confirm the user was added as an Admin
+    		iPos = InStr (1, sBuffer, "\" & sADUserID, 1)
+    	
+    		If iPos > 0 Then
+    			bAddedOK = True
+    			Log "AD   -- AD Userid " + sADUserID + " successfully added to Administrator group"
+    		Else
+    			If iRetry < 15 Then
+    				Log "AD   -- WARNING: AD Userid " + sADUserID + " failed to be added to the Administrator group, trying again..."
+    			Else
+    				Log "AD   -- ERROR: AD Userid " + sADUserID + " FAILED to be added to the Administrator group after 3 Retries !!!"
+    			End If	
+    		End If
+    		
+    Loop Until bAddedOK or iRetry > 15
+	
+	
+End Sub
+
+Sub AddSupportGroupsAsAdmins
+
+    Log "AD   -- Adding WPSG-GPC-PCADMIN as local admins"
+    oShell.Run "NET LOCALGROUP Administrators EU\WPSG-GPC-PCADMIN /ADD",7,True 
+    oShell.Run "NET LOCALGROUP Administrators NA\WPSG-GPC-PCADMIN /ADD",7,True 
+    oShell.Run "NET LOCALGROUP Administrators CN\WPSG-GPC-PCADMIN /ADD",7,True 
+    oShell.Run "NET LOCALGROUP Administrators AP\WPSG-GPC-PCADMIN /ADD",7,True 
+    oShell.Run "NET LOCALGROUP Administrators LA\WPSG-GPC-PCADMIN /ADD",7,True 
+    
+    Log "AD   -- Remove NA\Domain Admins as local admins"
+    oShell.Run "cmd.exe /c NET LOCALGROUP Administrators ""NA\Domain Admins"" /Delete >> C:\HP\Logs\Win10PostSetup.Log", 7, True 
+
+End Sub
+
+
+Sub DeleteLocalAccount
+
+	Dim oNetwork, sComputer, colAccounts, oUser, sLoggedOnUser
+	
+	' On Error Resume Next
+	Set oNetwork = CreateObject("Wscript.Network")
+	sComputer = oNetwork.ComputerName 
+	sLoggedOnUser = oNetwork.UserName
+	
+	Log "Logged-on user: " + sLoggedOnUser
+
+	oShell.Run "Net User " + sLoggedOnUser + " /Del", 7, False
+	
+End Sub
+
+Sub DisableLocalAccount
+
+	Dim oNetwork, sComputer, colAccounts, oUser, sLoggedOnUser
+	
+	' On Error Resume Next
+	Set oNetwork = CreateObject("Wscript.Network")
+	sComputer = oNetwork.ComputerName 
+	sLoggedOnUser = oNetwork.UserName
+	
+	Log "Logged-on user: " + sLoggedOnUser
+	
+	Set colAccounts = GetObject("WinNT://" & sComputer)
+	colAccounts.Filter = Array("user") 
+	
+	For Each oUser In colAccounts 
+		If oUser.Name = sLoggedOnUser Then
+			Log "Disabling local account: " + oUser.Name
+			oUser.AccountDisabled = True 
+            oUser.SetInfo 
+		End If		
+	Next
+
+End Sub
+
+
+Function JoinAD_PG
+		
+	If FSO.FileExists ("C:\INT.flg") Then
+
+		Log "JoinAD INT Domain, joining to OU=Regular,OU=Client Computers,DC=int,DC=pg,dc=com using gpcjoinad2.im"
+		JoinAD_PG = JoinAD ("int.pg.com", "int\gpcjoinad2.im", "Xh47=/j=/6tH0yRuvG", "OU=Regular,OU=Client Computers,DC=int,DC=pg,dc=com")
+		If JoinAD_PG <> 0 Then
+			Log "AD   -- ERROR:  Failed to add PC to INT Domain !!! Return value: " & ShowError (JoinAD_PG)
+			Log "Retrying, now using gpcjoinad.im"
+			JoinAD_PG = JoinAD ("int.pg.com", "int\gpcjoinad.im", "LetsJ0inAD", "OU=Regular,OU=Client Computers,DC=int,DC=pg,dc=com")
+		End If			
+	
+	ElseIf NOT FSO.FileExists ("C:\PGDEV.flg") Then
+		Log "JoinAD Production, joining to OU=USBBlocked,OU=Windows10,ou=Workstations,DC=na,DC=pg,dc=com"
+		JoinAD_PG = JoinAD ("NA.pg.com", "NA\gpcjoinad2.im", "Xh47=/j=/6tH0yRuvG", "OU=USBBlocked,OU=Windows10,ou=Workstations,DC=na,DC=pg,dc=com")
+		If JoinAD_PG <> 0 Then
+			Log "AD   -- ERROR:  Failed to add PC to NA Domain !!! Return value: " & ShowError (JoinAD_PG)
+			Log "Retrying, now joining to OU=Windows10,OU=Workstations,DC=na,DC=pg,dc=com"
+			JoinAD_PG = JoinAD ("NA.pg.com", "NA\gpcjoinad2.im", "Xh47=/j=/6tH0yRuvG", "OU=Windows10,OU=Workstations,DC=na,DC=pg,dc=com")
+		End If
+		
+	Else
+		Log "JoinAD PGDEV"
+		JoinAD_PG = JoinAD ("NADEV.PGDEV.WTF.PG.COM", "NADEV\gpcjoinad.im", "018Joinad018", "OU=Windows10,OU=Workstations,DC=nadev,DC=pgdev,DC=wtf,DC=pg,DC=com")
+		If JoinAD_PG <> 0 Then
+			Log "AD   -- ERROR:  Failed to add PC to NA Domain !!! Return value: " & ShowError (JoinAD_PG)
+			Log "Retrying, now joining to OU=USBBlocked,OU=Windows10,OU=Workstations,DC=nadev,DC=pgdev,DC=wtf,DC=pg,DC=com"
+			JoinAD_PG = JoinAD ("NADEV.PGDEV.WTF.PG.COM", "NADEV\gpcjoinad.im", "018Joinad018", "OU=USBBlocked,OU=Windows10,OU=Workstations,DC=nadev,DC=pgdev,DC=wtf,DC=pg,DC=com")
+		End If
+	End If
+	
+End Function
+
+
+'  Join PC to AD
+
+Function JoinAD (sDomain, sJoinUserid, sJoinPassword, sOU)
+
+    Const JOIN_DOMAIN = 1
+    Const ACCT_CREATE = 2
+    Const ACCT_DELETE = 4
+    Const WIN9X_UPGRADE = 16
+    Const DOMAIN_JOIN_IF_JOINED = 32
+    Const JOIN_UNSECURE = 64
+    Const MACHINE_PASSWORD_PASSED = 128
+    Const DEFERRED_SPN_SET = 256
+    Const INSTALL_INVOCATION = 262144
+     
+    Dim oNetwork, oComputer, sComputerName
+    Set oNetwork = CreateObject("WScript.Network")
+    sComputerName = oNetwork.ComputerName
+     
+    Set oComputer = GetObject("winmgmts:{impersonationLevel=Impersonate}!\\.\root\cimv2:Win32_ComputerSystem.Name='" & sComputerName & "'")
+     
+	JoinAD = oComputer.JoinDomainOrWorkGroup(sDomain, sJoinPassword, sJoinUserid, sOU , JOIN_DOMAIN + ACCT_CREATE)
+
+End Function
+
+Function ShowError (iErrorCode)
+
+	Select Case iErrorCode
+		Case 5
+			ShowError = "ERROR: Access Denied !!!"
+		Case 1355
+			ShowError = "ERROR: Unable to access NA domain  !!!"
+		Case 1909
+			ShowError = "ERROR: User account is locked !!!"
+		Case 2224
+			ShowError = "ERROR: Computer account already exists in another OU !!!"
+		Case Else
+			ShowError = "Code " & Cstr(iErrorCode)
+	End Select
+
+End Function
+
+
+' ----------------------------------  generic functions -------------------------------------
+
+	Function Log (status)
+    	Dim logFile, Locale, sCurTime
+    	
+    	If Not FSO.FolderExists ("C:\HP") Then
+			FSO.CreateFolder "C:\HP"
+		End If
+    	If Not FSO.FolderExists ("C:\HP\Logs") Then
+			FSO.CreateFolder "C:\HP\Logs"
+		End If
+    	
+    	Locale = SetLocale(1033)
+    	sCurTime = FormatDateTime(Now(), vbLongDate) + " " + FormatDateTime(Now(), vbLongTime)
+    	Set logFile = FSO.OpenTextFile ("C:\HP\Logs\Win10PostSetup.Log", 8, true)
+    	logFile.writeline "[" & sCurTime & " - Win10PostSetup] " + status
+    	logFile.close
+        	
+    End Function
+
+Const cCheckResultsXMLPath = "C:\HP\Logs\QACheckResults.XML"
+
+Sub WriteResultsXML (sQACheckName, sResultStatus)
+	
+	Dim oQACheckResultsXML, XMLRoot, oElement
+	
+  ' write to Results XML
+  Set oQACheckResultsXML = CreateObject("MSXML2.DOMDocument.3.0")
+  oQACheckResultsXML.async = False
+  If Not oQACheckResultsXML.load (cCheckResultsXMLPath) Then
+  	oQACheckResultsXML.loadXML ("<QACheckResults></QACheckResults>")
+  End If
+  
+  Set XMLRoot = oQACheckResultsXML.SelectSingleNode("//QACheckResults")
+  
+  ' On Error Resume Next
+  Set oElement = oQACheckResultsXML.SelectSingleNode("//QACheckResults/QACheckResult[@name = """ & cQACheckName & """]")
+  If oElement is Nothing Then
+  		' create new element
+  		Log "Creating new QACheckResult in XML"
+      Set oElement = oQACheckResultsXML.CreateElement("QACheckResult")
+      oElement.setAttribute "name", cQACheckName
+      oElement.setAttribute "ResultStatus", sResultStatus
+      XMLroot.AppendChild oQACheckResultsXML.createTextNode(vbNewLine)
+  		XMLroot.AppendChild oQACheckResultsXML.createTextNode(vbTab)
+      XMLroot.AppendChild oElement
+  Else
+  		Log "Updating existing QACheckResult in XML"
+      oElement.setAttribute "ResultStatus", sResultStatus
+  End If
+  oQACheckResultsXML.Save cCheckResultsXMLPath
+  
+End Sub
+
+Function ScriptDir
+	ScriptDir = Left(WScript.ScriptFullName,Len(WScript.ScriptFullName) - Len(WScript.ScriptName) -1)
+End Function
+
+Function BaseScriptDir
+	BaseScriptDir = Left(WScript.ScriptFullName,Len(WScript.ScriptFullName) - Len(WScript.ScriptName) - Len ("\Scripts") -1)
+End Function
