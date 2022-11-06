@@ -101,10 +101,6 @@
                 @endif
             </div>
 
-          <li class="active">
-            <a href="/home"><span class="fa fa-dashboard mr-3"></span>Dashboard</a>
-          </li>
-
           <li>
               <a href="{{ url('articles_index') }}"><span class="fa fa-newspaper-o mr-3"></span>Articles</a>
           </li>
