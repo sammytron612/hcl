@@ -173,7 +173,7 @@
     
     <script src="{{asset('js/rater.min.js')}}"></script>
     <script src="{{ asset('js/popper.js') }}"></script>
-    <script src="{{ mix('/js/app.js') }}"></script>
+    
     
     <script>
         (function($) {
