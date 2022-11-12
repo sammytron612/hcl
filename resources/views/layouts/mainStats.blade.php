@@ -18,28 +18,7 @@
 
     <link rel="stylesheet" href="{{ asset('css/all.css') }}">
     <style>
-    .chat-sender.msg {
-        -webkit-clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 12px 70%);
-        clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 12px 70%);
-        padding: 9px 9px;
-        padding-left: 21px;
-        background-color: #5D5D5D;
-        color: #fff;
-        box-sizing: border-box;
-        width: calc(100% - 53px);
-        margin-left: -9px;
-      }
-      .chatmsg {
-        margin-top: 5px;
-      }
-      .chat-container {
-        margin-top: 15px;
-        margin-bottom: 15px;
-          animation: fadein 2s;
-          -moz-animation: fadein 2s; /* Firefox */
-          -webkit-animation: fadein 2s; /* Safari and Chrome */
-          -o-animation: fadein 2s; /* Opera */
-      }
+    
       @keyframes fadein {
           from {
               opacity: 0;
