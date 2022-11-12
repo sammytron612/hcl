@@ -194,6 +194,21 @@
     <script src="{{ asset('js/popper.js') }}"></script>
     <script src="{{ mix('/js/app.js') }}"></script>
     <script src="{{asset('js/rater.min.js')}}"></script>
+    <script>
+        (function($) {
+"use strict";
+var fullHeight = function() {
+    $('.js-fullheight').css('height', $(window).height());
+    $(window).resize(function(){
+        $('.js-fullheight').css('height', $(window).height());
+    });
+};
+fullHeight();
+$('#sidebarCollapse').on('click', function () {
+  $('#sidebar').toggleClass('active');
+});
+})(jQuery);
+    </script>
 
 
   </body>
