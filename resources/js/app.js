@@ -46,10 +46,6 @@ Vue.filter('highlight', function (words, query) {
     return title
 });
 
-Vue.component('chart1-component', require('./components/Chart1Compnent.vue').default);
-Vue.component('chart2-component', require('./components/Chart2Component.vue').default);
-Vue.component('chart3-component', require('./components/Chart3Component.vue').default);
-Vue.component('chart4-component', require('./components/Chart4Component.vue').default);
 Vue.component('search-component', require('./components/SearchComponent.vue').default);
 Vue.component('snow-component', require('./components/SnowComponent.vue').default);
 Vue.component('settings-component', require('./components/SettingsComponent.vue').default);
