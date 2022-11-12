@@ -1,10 +1,9 @@
-import VueAxios from 'vue-axios';
+
 import axios from 'axios';
 
 require('./bootstrap');
 
-window.Vue = require('vue');
-Vue.use(VueAxios, axios);
+
 
 import moment from 'moment';
 Vue.filter('timeago', function(value) {
