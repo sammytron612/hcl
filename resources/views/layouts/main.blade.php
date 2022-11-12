@@ -24,21 +24,7 @@
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
-    <script src="https://www.gstatic.com/firebasejs/7.23.0/firebase.js"></script>
-    <script>
-
-        var firebaseConfig = {
-            apiKey: "AIzaSyDZtnEMaCKvF04cDlf62MdpDugL1brx7Us",
-            authDomain: "web-push-notification-216b0.firebaseapp.com",
-            projectId: "web-push-notification-216b0",
-            storageBucket: "web-push-notification-216b0.appspot.com",
-            messagingSenderId: "106405431860",
-            appId: "1:106405431860:web:f22be64355f49d97f25861"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const messaging = firebase.messaging();
-    </script>
+  
 
     <link rel="stylesheet" href="{{ asset('css/all.css') }}">
     <style>
