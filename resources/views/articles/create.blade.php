@@ -134,14 +134,6 @@
 <script src="https://cdn.tiny.cloud/1/d3utf658spf5n1oft4rjl6x85g568jj7ourhvo2uhs578jt9/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
 
-messaging.onMessage(function(payload) {
-        const noteTitle = payload.notification.title;
-        const noteOptions = {
-            body: payload.notification.body,
-            icon: payload.notification.icon,
-        };
-        new Notification(noteTitle, noteOptions);
-    });
 
 function validate_form()
 {

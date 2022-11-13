@@ -24,7 +24,7 @@
 
 
         @if (count($entries) > 0)
-        <div class="d-flex align-content-center table-responsive">
+        <div class="table-responsive">
 
             <table id="snow-table" class="table table-inverse table-hover table-striped table-style">
                 <thead>

@@ -14,31 +14,18 @@
                Session::forget('success');
            @endphp
       @endif
-<div class="smokey mt-5 p-5 border shadow">
+<div class="smokey mt-5 p-2 p-md-5 border shadow">
     <div class="row align-items-center">
         <div class="col-6">
-            <h1><i class="text-primary fa fa-user fa-1x mr-3"></i>Admin</h1>
-        </div>
-        <div class="d-flex justify-content-end col-6">
-            <div class="custom-control custom-switch">
-                @if($stealth)
-                    <input onchange="stealth(this.id)" checked type="checkbox" name="stealth" class="custom-control-input" id="stealth">
-                    <label class="custom-control-label" for="stealth"><h5>Stealth mode</h5></label>
-                @else
-                    <input onchange="stealth(this.id)" type="checkbox" name="stealth" class="custom-control-input" id="stealth">
-                    <label class="custom-control-label" for="stealth"><h5>Stealth mode</h5></label>
-                @endif
-
-            </div>
+            <h1 class="text-center text-md-left"><i class="text-primary fa fa-user fa-1x mr-3"></i>Admin</h1>
         </div>
     </div>
 <hr>
 
-
-    <div class="ml-2 row d-flex col-sm-12 mt-5">
-        <div class="col-md-4 p-25  p-2">
+    <div class="row">
+        <div class="col-md-4 col-sm-12 p-0 p-md-2 mt-2 d-flex justify-content-center">
             <div class="w-75 card">
-                <a href=" {{ route('admin.invites') }} " class="stretched-link"><img class="card-img-top" src="{{ asset('images/invites.png') }}" alt="invites"></a>
+                <a href=" {{ route('admin.invites') }} " class="stretched-link"><img class="img-fluid" src="{{ asset('images/invites.png') }}" alt="invites"></a>
                     <div class="text-center card-body">
 
                             <!--Title-->
@@ -52,9 +39,9 @@
             </div>
         </div>
 
-        <div class="col-md-4 col-sm-12 p-2">
+        <div class="col-md-4 col-sm-12 p-0 p-md-2 mt-2 d-flex justify-content-center">
             <div class="w-75 card">
-                <a href=" {{ route('admin.approvals') }} " class="stretched-link"><img class="card-img-top" src="{{ asset('images/approvals.png') }}" alt="invites"></a>
+                <a href=" {{ route('admin.approvals') }} " class="stretched-link"><img class="img-fluid" src="{{ asset('images/approvals.png') }}" alt="invites"></a>
                     <div class="card-body text-center">
                         <!--Title-->
                         <h4 class="card-title">Approvals</h4>
@@ -66,9 +53,9 @@
             </div>
         </div>
 
-        <div class="col-md-4 col-sm-12 p-2">
+        <div class="col-md-4 col-sm-12 p-0 p-md-2 mt-2 d-flex justify-content-center">
             <div class="w-75 card">
-                <a href=" {{ route('snow.index') }} " class="stretched-link"><img class="card-img-top" src="{{ asset('images/snow.jpg') }}" alt="User Management"></a>
+                <a href=" {{ route('snow.index') }} " class="stretched-link"><img class="img-fluid" src="{{ asset('images/snow.jpg') }}" alt="User Management"></a>
                     <div class="card-body text-center">
                         <!--Title-->
                         <h4 class="card-title">Service now</h4>
@@ -82,23 +69,12 @@
 
     </div>
 
-    <div class="ml-2 row d-flex col-sm-12 mt-5">
-        <div class="col-md-4 col-sm-12 p-2">
-            <div class="w-75 card">
-                <a href=" {{ route('admin.stats') }} " class="stretched-link"><img class="card-img-top" src="{{ asset('images/stats.jpg') }}" alt="User Management"></a>
-                    <div class="card-body text-center">
-                        <!--Title-->
-                        <h4 class="card-title">Statistics</h4>
-                        <!--Text-->
-                        <p class="card-text">Graph bullshit</p>
-                        <button class="btn btn-outline-primary btn-sm">Go there</button>
-                    </div>
-            </div>
-        </div>
+    <div class="ml-2 row d-flex mt-5">
 
-        <div class="col-md-4 col-sm-12 p-2">
+
+        <div class="col-md-4 col-sm-12 p-0 p-md-2 mt-2 d-flex justify-content-center">
             <div class="w-75 card">
-                <a href=" {{ route('notifications.create') }} " class="stretched-link"><img class="card-img-top" src="{{ asset('images/comment.jpg') }}" alt="User Management"></a>
+                <a href=" {{ route('notifications.create') }} " class="stretched-link"><img class="img-fluid" src="{{ asset('images/comment.jpg') }}" alt="User Management"></a>
                     <div class="text-center card-body">
                         <!--Title-->
                         <h4 class="card-title">Notifications</h4>
@@ -109,9 +85,9 @@
             </div>
         </div>
 
-        <div class="col-md-4 col-sm-12 p-2">
+        <div class="col-md-4 col-sm-12 p-0 p-md-2 mt-2 d-flex justify-content-center">
             <div class="w-75 card">
-                <a href=" {{ route('admin.usermanagement') }} " class="stretched-link"><img class="card-img-top" src="{{ asset('images/users.jpg') }}" alt="User Management"></a>
+                <a href=" {{ route('admin.usermanagement') }} " class="stretched-link"><img class="img-fluid" src="{{ asset('images/users.jpg') }}" alt="User Management"></a>
                     <div class="card-body text-center">
                             <!--Title-->
                             <h4 class="card-title">Users</h4>
@@ -142,23 +118,6 @@ $(document).ready(function() {
 });
 
 
-function stealth(id)
-{
-    var status = $('#' + id).is(":checked")
-
-    $.ajax({
-            type: "post",
-            url: "{{ route('stealth.change') }}",
-            data: {"_token": "{{ csrf_token() }}","status": status},
-            dataType: "json",
-            success: function (response) {
-
-                console.log(response)
-
-            }
-
-        });
-}
 </script>
 
 @endsection

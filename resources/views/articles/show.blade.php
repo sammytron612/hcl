@@ -162,14 +162,7 @@
 </div>
 <script src="{{asset('js/rater.min.js')}}"></script>
 <script>
-    messaging.onMessage(function(payload) {
-        const noteTitle = payload.notification.title;
-        const noteOptions = {
-            body: payload.notification.body,
-            icon: payload.notification.icon,
-        };
-        new Notification(noteTitle, noteOptions);
-    });
+    
 
 var options = {
                 max_value: 5,

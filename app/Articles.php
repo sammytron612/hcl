@@ -2,12 +2,10 @@
 
 namespace App;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Scout\Searchable;
+
 
 class Articles extends Model
 {
-
-    use Searchable;
 
 
     protected $fillable = ['title','slug','body','author','author_name','sectionid','tags','attachments','views','rating','status','approved','published'];

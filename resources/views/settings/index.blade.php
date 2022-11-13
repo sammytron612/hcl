@@ -1,4 +1,4 @@
-@extends('layouts.mainStats')
+@extends('layouts.main')
 
 @section('content')
 
@@ -11,7 +11,7 @@
 
 <br>
 
-    <settings-component class="mt-1" user="{{ Auth::user()->role }}"></settings-component>
+    @livewire('settings-component')
 
 
 </div>

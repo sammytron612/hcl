@@ -11,12 +11,13 @@
 
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <script src="{{asset('js/jquery.treetable.js')}}"></script>
-   
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rateYo/2.3.2/jquery.rateyo.min.css">
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/rateYo/2.3.2/jquery.rateyo.min.js"></script>
+    @livewireStyles
 
     <link rel="stylesheet" href="{{asset('css/jquery.treetable.theme.default.css') }}" rel="stylesheet" type="text/css"/>
     <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
@@ -45,6 +46,32 @@
         font-weight: bold;
         font-size: 16px;
   }
+
+  [x-cloak] { display: none !important; }
+
+  .chat-sender.msg {
+        -webkit-clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 12px 70%);
+        clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 12px 70%);
+        padding: 9px 9px;
+        padding-left: 21px;
+        background-color: #5D5D5D;
+        color: #fff;
+        box-sizing: border-box;
+        width: calc(100% - 53px);
+        margin-left: -9px;
+      }
+      .chatmsg {
+        margin-top: 5px;
+      }
+      .chat-container {
+        margin-top: 15px;
+        margin-bottom: 15px;
+          animation: fadein 2s;
+          -moz-animation: fadein 2s; /* Firefox */
+          -webkit-animation: fadein 2s; /* Safari and Chrome */
+          -o-animation: fadein 2s; /* Opera */
+      }
+
 
     </style>
   </head>
@@ -129,36 +156,13 @@
     	</nav>
 
         <!-- Page Content  -->
-            <div  id="content" class="pt-1 px-5">
+            <div  id="content" class="pt-1 px-0 px-md-5">
                 @yield('content')
             </div>
         </div>
     <script src="{{ asset('js/popper.js') }}"></script>
-
-
-    <script>
-
-        (function($) {
-
-"use strict";
-
-var fullHeight = function() {
-
-    $('.js-fullheight').css('height', $(window).height());
-    $(window).resize(function(){
-        $('.js-fullheight').css('height', $(window).height());
-    });
-
-};
-fullHeight();
-
-$('#sidebarCollapse').on('click', function () {
-  $('#sidebar').toggleClass('active');
-});
-
-})(jQuery);
-    </script>
-
+    <script src="{{ mix('/js/app.js') }}"></script>
+    @livewireScripts
 
   </body>
 </html>

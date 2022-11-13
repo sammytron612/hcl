@@ -24,7 +24,8 @@
                     @endforeach
         @endif
 <div class="smokey mt-5 p-5 border shadow">
-<h1><span class="text-primary fa fa-sticky-note fa-1x mr-3"></span>Sections  @can('isViewer')@else <span><a href="{{ route('sections.create') }}" class="pull-right btn btn-primary">New Section</a></span>@endcan</h1>
+<h1 class="d-flex align-items-center justify-content-between"><span class="text-primary fa fa-sticky-note fa-1x mr-3"></span>Sections  @can('isViewer')@else <span class="d-none d-md-inline"><a href="{{ route('sections.create') }}" class="btn btn-primary">New Section</a></span>
+    <span class="d-inline d-md-none"><a href="{{ route('sections.create') }}" class="btn btn-primary">+</a></span>@endcan</h1>
 @if($html)
 <strong>Double click to view articles for that section</strong>
 <div class="table-responsive-md">

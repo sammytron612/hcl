@@ -1,8 +1,8 @@
-@extends('layouts.mainStats')
+@extends('layouts.main')
 
 @section('content')
 
-<div id="wrapper" class="container-fluid p-2 h-100">
+<div id="wrapper" class="container-fluid p-0 p-md-2 h-100">
     @if (Session::has('success'))
                <div class="alert alert-warning alert-block">
                   <button type="button" class="close" data-dismiss="alert">×</button>
@@ -16,12 +16,6 @@
 @php
     session(['previous' => url()->current()]);
 @endphp
-<!--<form action="/searches/search" method="post">
-    @csrf
-    <input name="search">
-    <button type="submit">go</button>
-</form> -->
-    <search-component v-bind:user='{!! Auth::user()->toJson() !!}'></search-component>
+@livewire('search-component')
 </div>
-
 @endsection

@@ -6,6 +6,10 @@ require('./bootstrap');
 
 
 import moment from 'moment';
+
+
+
+/*
 Vue.filter('timeago', function(value) {
     return moment.utc(value).local().fromNow();
 });
@@ -45,15 +49,7 @@ Vue.filter('highlight', function (words, query) {
     return title
 });
 
-Vue.component('search-component', require('./components/SearchComponent.vue').default);
-Vue.component('snow-component', require('./components/SnowComponent.vue').default);
-Vue.component('settings-component', require('./components/SettingsComponent.vue').default);
-
-
-const app = new Vue({
-    el: '#app',
-
-});
+*/
 
 (function($) {
 
